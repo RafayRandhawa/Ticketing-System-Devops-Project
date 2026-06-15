@@ -14,10 +14,6 @@ class Settings(BaseSettings):
     supabase_service_role_key: Optional[str] = None
     database_url: str
 
-    secret_key: str
-    algorithm: str
-    access_token_expire_minutes: int
-
     host: str
     port: int
 
@@ -39,6 +35,8 @@ class Settings(BaseSettings):
     # QR Code
     qr_code_size: int = 10
     qr_code_border: int = 4
+    
+    base_url: str = "http://localhost:8000"  # Base URL for generating QR codes
     
     class Config:
         env_file = ".env"

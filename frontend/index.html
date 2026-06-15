@@ -1,48 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Event Ticketing System</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
+    <div id="loader" class="loader-overlay">
+        <div class="spinner"></div>
+        <p>Please wait...</p>
+    </div>
+    <div id="toastContainer"></div>
     <div id="app">
+
         <nav class="navbar" id="navbar">
             <div class="container">
-                <h1 class="logo">🎟️ Event Ticketing System</h1>
+                <div class="nav-brand">
+                    <h1 class="logo">🎟️ Event Ticketing System</h1>
+                    <p class="nav-subtitle">
+                        QR-based event registration and validation
+                    </p>
+                </div>
+
+                <div id="userProfile" class="user-profile" style="display:none;">
+                    <div class="user-avatar">👤</div>
+                    <div class="user-info">
+                        <div id="userName">Guest</div>
+                        <div id="userRole">User</div>
+                    </div>
+                </div>
+
                 <div class="nav-links" id="navLinks">
                     <a href="#" onclick="navigate('home')">Home</a>
                     <a href="#" onclick="navigate('events')">Events</a>
                     <a href="#" onclick="navigate('my-tickets')">My Tickets</a>
-                    <a href="#" onclick="navigate('scan')">Scan Ticket</a>
-                    <a href="#" onclick="navigate('admin')" id="adminLink" style="display:none; color: #ff9800; font-weight: bold;">🔧 Admin</a>
+                    <a href="#" onclick="navigate('admin')" id="adminLink"
+                        style="display:none; color: #ff9800; font-weight: bold;">🔧 Admin Dashboard</a>
                     <a href="#" onclick="logout()" id="logoutBtn" style="display:none;">Logout</a>
                 </div>
             </div>
         </nav>
 
         <main class="container">
+
             <!-- Login Page -->
             <section id="login" class="page active">
                 <div class="auth-container">
                     <div class="auth-card">
-                        <h2>Event Ticketing System</h2>
-                        <p>Login to your account</p>
+                        <div class="auth-header">
+                            <div class="auth-badge">Welcome Back</div>
+                            <h2>Login to your account</h2>
+                            <p>Access events, tickets, and admin tools</p>
+                        </div>
+
                         <form id="loginForm" onsubmit="handleLogin(event)" class="form">
                             <div class="form-group">
-                                <label>Username</label>
-                                <input type="text" id="loginUsername" name="username" class="input" required>
+                                <label for="loginUsername">Username</label>
+                                <input type="text" id="loginUsername" name="username" class="input"
+                                    placeholder="Enter your username" required>
                             </div>
+
                             <div class="form-group">
-                                <label>Password</label>
-                                <input type="password" id="loginPassword" name="password" class="input" required>
+                                <label for="loginPassword">Password</label>
+                                <input type="password" id="loginPassword" name="password" class="input"
+                                    placeholder="Enter your password" required>
                             </div>
-                            <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+
+                            <button type="submit" class="btn btn-primary btn-full">Login</button>
                         </form>
-                        <p style="text-align: center; margin-top: 1rem;">
-                            Don't have an account? 
-                            <a href="#" onclick="navigate('register')" style="color: var(--primary-color); text-decoration: underline;">Register here</a>
+
+                        <p class="auth-switch">
+                            Don't have an account?
+                            <a href="#" onclick="navigate('register')">Register here</a>
                         </p>
                     </div>
                 </div>
@@ -52,30 +84,43 @@
             <section id="register" class="page">
                 <div class="auth-container">
                     <div class="auth-card">
-                        <h2>Create Account</h2>
-                        <p>Register for a new account</p>
+                        <div class="auth-header">
+                            <div class="auth-badge">Create Account</div>
+                            <h2>Register for a new account</h2>
+                            <p>Get access to event browsing and ticketing</p>
+                        </div>
+
                         <form id="registerForm" onsubmit="handleRegister(event)" class="form">
                             <div class="form-group">
-                                <label>Full Name</label>
-                                <input type="text" id="registerName" name="full_name" class="input" required>
+                                <label for="registerName">Full Name</label>
+                                <input type="text" id="registerName" name="full_name" class="input"
+                                    placeholder="Your full name" required>
                             </div>
+
                             <div class="form-group">
-                                <label>Email</label>
-                                <input type="email" id="registerEmail" name="email" class="input" required>
+                                <label for="registerEmail">Email</label>
+                                <input type="email" id="registerEmail" name="email" class="input"
+                                    placeholder="you@example.com" required>
                             </div>
+
                             <div class="form-group">
-                                <label>Username</label>
-                                <input type="text" id="registerUsername" name="username" class="input" required>
+                                <label for="registerUsername">Username</label>
+                                <input type="text" id="registerUsername" name="username" class="input"
+                                    placeholder="Choose a username" required>
                             </div>
+
                             <div class="form-group">
-                                <label>Password</label>
-                                <input type="password" id="registerPassword" name="password" class="input" required>
+                                <label for="registerPassword">Password</label>
+                                <input type="password" id="registerPassword" name="password" class="input"
+                                    placeholder="Create a password" required>
                             </div>
-                            <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>
+
+                            <button type="submit" class="btn btn-primary btn-full">Register</button>
                         </form>
-                        <p style="text-align: center; margin-top: 1rem;">
-                            Already have an account? 
-                            <a href="#" onclick="navigate('login')" style="color: var(--primary-color); text-decoration: underline;">Login here</a>
+
+                        <p class="auth-switch">
+                            Already have an account?
+                            <a href="#" onclick="navigate('login')">Login here</a>
                         </p>
                     </div>
                 </div>
@@ -84,15 +129,62 @@
             <!-- Home Page -->
             <section id="home" class="page">
                 <div class="hero">
-                    <h2>Welcome to Event Ticketing System</h2>
-                    <p>Create events, generate tickets, and manage attendees with QR codes</p>
-                    <button onclick="navigate('events')" class="btn btn-primary">Browse Events</button>
+                    <div class="hero-content">
+                        <div class="hero-badge">Smart QR Ticketing</div>
+                        <h2>Manage events, tickets, and entry verification in one place</h2>
+                        <p>
+                            A streamlined ticketing platform for users and administrators.
+                            Register, buy tickets, verify QR codes, and manage events with ease.
+                        </p>
+
+                        <div class="hero-actions">
+                            <button onclick="navigate('events')" class="btn btn-primary">Browse Events</button>
+                            <button onclick="navigate('my-tickets')" class="btn btn-secondary">My Tickets</button>
+                        </div>
+                    </div>
+
+                    <div class="hero-cards">
+                        <div class="feature-card">
+                            <div class="feature-icon">🎫</div>
+                            <h3>Ticketing</h3>
+                            <p>Buy and track tickets quickly.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">📲</div>
+                            <h3>QR Verification</h3>
+                            <p>Validate entry with QR codes.</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🛠️</div>
+                            <h3>Admin Control</h3>
+                            <p>Manage users, events, and tickets.</p>
+                        </div>
+                    </div>
                 </div>
+
+                <div class="section-card">
+                    <h3>Quick Start</h3>
+                    <div class="quick-actions">
+                        <button onclick="navigate('events')" class="btn btn-outline">View Events</button>
+                        <button onclick="navigate('my-tickets')" class="btn btn-outline">View Tickets</button>
+                        <button onclick="navigate('create-event')" class="btn btn-outline">Create Event</button>
+                        <button onclick="navigate('scan')" class="btn btn-outline">Verify Ticket</button>
+                        <button onclick="navigate('admin')" class="btn btn-outline admin-only">Admin Dashboard</button>
+                    </div>
+                </div>
+                
             </section>
 
             <!-- Events Page -->
             <section id="events" class="page">
-                <h2>Events</h2>
+                <div class="page-header">
+                    <div>
+                        <h2>Events</h2>
+                        <p>Browse available events and purchase tickets.</p>
+                    </div>
+                    <button onclick="navigate('home')" class="btn btn-ghost">Back to Home</button>
+                </div>
+
                 <div class="events-grid" id="eventsGrid">
                     <!-- Events will be loaded here -->
                 </div>
@@ -100,58 +192,118 @@
 
             <!-- My Tickets Page -->
             <section id="my-tickets" class="page">
-                <h2>My Tickets</h2>
+                <div class="page-header">
+                    <div>
+                        <h2>My Tickets</h2>
+                        <p>All tickets associated with your account.</p>
+                    </div>
+                    <button onclick="navigate('events')" class="btn btn-ghost">Browse Events</button>
+                </div>
+
                 <div class="tickets-list" id="ticketsList">
                     <!-- Tickets will be loaded here -->
                 </div>
             </section>
 
-            <!-- Scan Ticket Page -->
+            <!-- Scan/Verify Ticket Page -->
             <section id="scan" class="page">
-                <h2>Scan Ticket</h2>
-                <div class="scan-form">
-                    <input type="text" id="scanInput" placeholder="Enter ticket number" class="input">
-                    <button onclick="scanTicket()" class="btn btn-primary">Verify Ticket</button>
-                    <div id="scanResult"></div>
+                <div class="page-header">
+                    <div>
+                        <h2>Verify Ticket</h2>
+                        <p>Admin-only ticket validation and entry checks.</p>
+                    </div>
+                    <button onclick="navigate('admin')" class="btn btn-ghost">Go to Admin Dashboard</button>
+                </div>
+
+                <div class="scan-card">
+                    <div class="scan-form">
+                        <label for="scanInput">Ticket Number</label>
+                        <input type="text" id="scanInput" placeholder="Enter ticket number" class="input">
+                        <button onclick="scanTicket()" class="btn btn-primary">Verify Ticket</button>
+                        <div id="scanResult"></div>
+                    </div>
                 </div>
             </section>
 
             <!-- Create Event Page -->
             <section id="create-event" class="page">
-                <h2>Create New Event</h2>
-                <form id="eventForm" onsubmit="createEvent(event)" class="form">
-                    <div class="form-group">
-                        <label>Event Title</label>
-                        <input type="text" name="title" class="input" required>
+                <div class="page-header">
+                    <div>
+                        <h2>Create New Event</h2>
+                        <p>Admin and organizer event creation workspace.</p>
                     </div>
-                    <div class="form-group">
-                        <label>Description</label>
-                        <textarea name="description" class="input" rows="4"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Location</label>
-                        <input type="text" name="location" class="input" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Event Date</label>
-                        <input type="datetime-local" name="event_date" class="input" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Capacity</label>
-                        <input type="number" name="capacity" class="input" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Ticket Price ($)</label>
-                        <input type="number" name="ticket_price" class="input" step="0.01">
-                    </div>
-                    <button type="submit" class="btn btn-primary">Create Event</button>
-                </form>
+                    <button onclick="navigate('admin')" class="btn btn-ghost admin-only">Back to Admin Dashboard</button>
+                </div>
+
+                <div class="section-card">
+                    <form id="eventForm" onsubmit="createEventHandler(event)" class="form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Event Title</label>
+                                <input type="text" name="title" class="input" placeholder="Enter event title" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Location</label>
+                                <input type="text" name="location" class="input" placeholder="Enter event location"
+                                    required>
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label>Description</label>
+                                <textarea name="description" class="input" rows="4"
+                                    placeholder="Event description"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Event Date</label>
+                                <input type="datetime-local" name="event_date" class="input" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Capacity</label>
+                                <input type="number" name="capacity" class="input" placeholder="Maximum attendees"
+                                    required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Ticket Price ($)</label>
+                                <input type="number" name="ticket_price" class="input" step="0.01" placeholder="0.00">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Create Event</button>
+                    </form>
+                </div>
             </section>
 
             <!-- Admin Dashboard Page -->
             <section id="admin" class="page">
-                <h2>Admin Dashboard</h2>
-                
+                <div class="page-header">
+                    <div>
+                        <h2>Admin Dashboard</h2>
+                        <p>Manage users, events, tickets, and platform activity.</p>
+                    </div>
+                    <div class="admin-header-actions">
+                        <button onclick="navigate('create-event')" class="btn btn-outline">Create Event</button>
+                        <button onclick="navigate('scan')" class="btn btn-outline">Verify Ticket</button>
+                    </div>
+                </div>
+                <div id="quickActions" class="quick-admin-actions">
+
+                    <button onclick="navigate('create-event')" class="btn btn-primary">
+                        ➕ Create Event
+                    </button>
+
+                    <button onclick="navigate('scan')" class="btn btn-success">
+                        ✔ Verify Ticket
+                    </button>
+
+                    <button onclick="loadAdminStats()" class="btn btn-outline">
+                        🔄 Refresh Dashboard
+                    </button>
+
+                </div>
                 <div class="admin-tabs">
                     <button class="admin-tab-btn active" onclick="showAdminTab('stats')">📊 Statistics</button>
                     <button class="admin-tab-btn" onclick="showAdminTab('users')">👥 Users</button>
@@ -161,6 +313,26 @@
 
                 <!-- Statistics Tab -->
                 <div id="stats-tab" class="admin-tab-content active">
+                    <div class="system-status-card">
+
+                        <h3>System Status</h3>
+
+                        <div class="status-item">
+                            <span>Backend API</span>
+                            <span id="apiStatus">🟢 Online</span>
+                        </div>
+
+                        <div class="status-item">
+                            <span>Database</span>
+                            <span id="dbStatus">🟢 Connected</span>
+                        </div>
+
+                        <div class="status-item">
+                            <span>Email Service</span>
+                            <span id="emailStatus">🟢 Active</span>
+                        </div>
+
+                    </div>
                     <div class="stats-grid">
                         <div class="stat-card">
                             <div class="stat-value" id="stat-users">0</div>
@@ -179,6 +351,7 @@
                             <div class="stat-label">Tickets Used</div>
                         </div>
                     </div>
+
                     <div class="role-breakdown">
                         <h3>Users by Role</h3>
                         <div id="role-stats"></div>
@@ -188,66 +361,124 @@
                 <!-- Users Tab -->
                 <div id="users-tab" class="admin-tab-content">
                     <h3>User Management</h3>
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Full Name</th>
-                                <th>Role</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTable">
-                            <tr><td colspan="6" style="text-align: center;">Loading...</td></tr>
-                        </tbody>
-                    </table>
+                    <div class="table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Full Name</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTable">
+                                <tr>
+                                    <td colspan="6" style="text-align: center;">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Events Tab -->
                 <div id="events-tab" class="admin-tab-content">
                     <h3>Event Management</h3>
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Location</th>
-                                <th>Date</th>
-                                <th>Capacity</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="eventsTable">
-                            <tr><td colspan="6" style="text-align: center;">Loading...</td></tr>
-                        </tbody>
-                    </table>
+                    <div class="table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Location</th>
+                                    <th>Date</th>
+                                    <th>Capacity</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="eventsTable">
+                                <tr>
+                                    <td colspan="6" style="text-align: center;">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Tickets Tab -->
                 <div id="tickets-tab" class="admin-tab-content">
                     <h3>Ticket Management</h3>
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Ticket Number</th>
-                                <th>Attendee</th>
-                                <th>Email</th>
-                                <th>Event ID</th>
-                                <th>Status</th>
-                                <th>Created</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ticketsTable">
-                            <tr><td colspan="6" style="text-align: center;">Loading...</td></tr>
-                        </tbody>
-                    </table>
+                    <div class="table-wrap">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Ticket Number</th>
+                                    <th>Attendee</th>
+                                    <th>Email</th>
+                                    <th>Event ID</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ticketsTable">
+                                <tr>
+                                    <td colspan="6" style="text-align: center;">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
+
         </main>
     </div>
+    <div id="confirmModal" class="modal">
+
+        <div class="modal-content">
+
+            <h3 id="confirmTitle">
+                Confirm Action
+            </h3>
+
+            <p id="confirmMessage">
+                Are you sure?
+            </p>
+
+            <div class="modal-actions">
+
+                <button id="confirmYes" class="btn btn-danger">
+                    Confirm
+                </button>
+
+                <button onclick="closeModal()" class="btn btn-secondary">
+                    Cancel
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+    <footer class="footer">
+
+        <div class="footer-content">
+
+            <h3>🎟 QR Code Event Ticketing System</h3>
+
+            <p>
+                FastAPI • Supabase • Docker • AWS
+            </p>
+
+            <p>
+                DevOps Project 2026
+            </p>
+
+        </div>
+
+    </footer>
 
     <script src="script.js"></script>
 </body>
+
 </html>

@@ -8,13 +8,14 @@ from typing import List
 from database import get_db
 from models import Event as EventModel, User as UserModel
 from schemas import EventCreate, Event, EventWithTickets
+from routes.auth import get_current_user
 
 router = APIRouter()
 
 @router.post("/", response_model=Event)
-def create_event(event_data: EventCreate, organizer_id: int, db: Session = Depends(get_db)):
+def create_event(event_data: EventCreate, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     """Create a new event"""
-    
+    organizer_id = current_user.id
     # Check if organizer exists
     organizer = db.query(UserModel).filter(UserModel.id == organizer_id).first()
     if not organizer:

@@ -51,6 +51,7 @@ class Ticket(Base):
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     ticket_number = Column(String(50), unique=True, index=True, nullable=False)
     qr_code = Column(Text)
+    user_id = Column(Integer, ForeignKey("users.id"))
     attendee_name = Column(String(100), nullable=False)
     attendee_email = Column(String(100), nullable=False)
     is_used = Column(Boolean, default=False)

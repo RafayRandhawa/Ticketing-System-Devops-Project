@@ -62,6 +62,7 @@ class Ticket(TicketBase):
     id: int
     event_id: int
     ticket_number: str
+    user_id: int
     qr_code: Optional[str] = None
     is_used: bool
     created_at: datetime

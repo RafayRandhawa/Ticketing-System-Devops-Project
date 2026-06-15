@@ -1,5 +1,7 @@
 // API Configuration
-const API_URL = 'http://localhost:8000/api';
+const API_URL = window.location.hostname === 'localhost'
+    ? 'http://localhost:8000/api'
+    : `${window.location.origin}/api`;
 
 // State management
 let currentUser = null;
@@ -7,7 +9,7 @@ let currentPage = 'login';
 
 // Check if user is logged in on page load
 document.addEventListener('DOMContentLoaded', () => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
         // Try to verify token is still valid
         getCurrentUser();
@@ -18,63 +20,143 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Navigation
 function navigate(page) {
-    // Hide all pages
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    
-    // Show selected page
+
+    // Role protection
+    if (currentUser) {
+
+        // Admin-only pages
+        if (
+            ['admin', 'scan'].includes(page) &&
+            currentUser.role !== 'admin'
+        ) {
+            showAlert(
+                'Access denied. Administrator privileges required.',
+                'error'
+            );
+            return;
+        }
+
+        // Admin + Organizer pages
+        if (
+            page === 'create-event' &&
+            !['admin', 'organizer'].includes(currentUser.role)
+        ) {
+            showAlert(
+                'Access denied. Organizer or Administrator privileges required.',
+                'error'
+            );
+            return;
+        }
+    }
+
+    document.querySelectorAll('.page')
+        .forEach(pageEl => pageEl.classList.remove('active'));
+
     const selectedPage = document.getElementById(page);
-    if (selectedPage) {
-        selectedPage.classList.add('active');
-        currentPage = page;
-        
-        // Load data based on page
-        if (page === 'events') {
+
+    if (!selectedPage) {
+        console.error(`Page '${page}' not found`);
+        return;
+    }
+
+    selectedPage.classList.add('active');
+    currentPage = page;
+
+    switch (page) {
+
+        case 'events':
             loadEvents();
-        } else if (page === 'my-tickets') {
+            break;
+
+        case 'my-tickets':
             loadMyTickets();
-        } else if (page === 'home') {
-            updateNavigation();
-        } else if (page === 'admin') {
+            break;
+
+        case 'admin':
             loadAdminStats();
             loadAdminUsers();
             loadAdminEvents();
             loadAdminTickets();
-        }
+            break;
+
+        case 'home':
+            updateNavigation();
+            break;
     }
 }
-
+function canManageEvents() {
+    return currentUser &&
+        (
+            currentUser.role === 'admin' ||
+            currentUser.role === 'organizer'
+        );
+}
 // Update navbar visibility based on authentication
 function updateNavigation() {
-    const token = localStorage.getItem('token');
+
+    const token = sessionStorage.getItem('token');
+    const quickActions = document.getElementById('quickActions');
     const navbar = document.getElementById('navbar');
     const logoutBtn = document.getElementById('logoutBtn');
     const adminLink = document.getElementById('adminLink');
-    
-    if (token && currentUser) {
-        navbar.classList.add('visible');
-        logoutBtn.style.display = 'block';
-        
-        // Show admin link only for admin users
-        if (currentUser.role === 'admin') {
-            adminLink.style.display = 'block';
-        } else {
-            adminLink.style.display = 'none';
-        }
-    } else {
+
+    const scanLinks = document.querySelectorAll('.admin-only');
+
+    if (!token || !currentUser) {
+
         navbar.classList.remove('visible');
+
         logoutBtn.style.display = 'none';
+
         adminLink.style.display = 'none';
+
+        scanLinks.forEach(el => {
+            el.style.display = 'none';
+        });
+
+        return;
     }
+    if (quickActions) {
+        quickActions.style.display =
+            canManageEvents()
+                ? 'flex'
+                : 'none';
+    }
+    navbar.classList.add('visible');
+
+    logoutBtn.style.display = 'block';
+
+    if (currentUser.role === 'admin') {
+
+        adminLink.style.display = 'block';
+
+        scanLinks.forEach(el => {
+            el.style.display = 'inline-flex';
+        });
+
+    } else {
+
+        adminLink.style.display = 'none';
+
+        scanLinks.forEach(el => {
+            el.style.display = 'none';
+        });
+    }
+
+    updateUserDisplay();
 }
 
 // Auth functions
 async function handleLogin(e) {
     e.preventDefault();
-    
+
     const username = document.getElementById('loginUsername').value;
     const password = document.getElementById('loginPassword').value;
-    
+    const button = e.target.querySelector('button[type="submit"]');
     try {
+        
+        setButtonLoading(button, true);
+
         const response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
             headers: {
@@ -82,11 +164,12 @@ async function handleLogin(e) {
             },
             body: JSON.stringify({ username, password })
         });
-        
+        if (handleUnauthorized(response)) return;
+
         const data = await response.json();
-        
+
         if (response.ok) {
-            localStorage.setItem('token', data.access_token);
+            sessionStorage.setItem('token', data.access_token);
             document.getElementById('loginForm').reset();
             getCurrentUser();
         } else {
@@ -95,18 +178,55 @@ async function handleLogin(e) {
     } catch (error) {
         console.error('Login failed:', error);
         showAlert('Login failed. Please check your connection.', 'error');
+    } finally {
+        setButtonLoading(button, false);
     }
+}
+
+function updateUserDisplay() {
+
+    if (!currentUser) return;
+
+    const brand = document.querySelector('.nav-subtitle');
+
+    if (brand) {
+        brand.innerHTML =
+            `Logged in as <strong>${currentUser.full_name || currentUser.username}</strong>`;
+    }
+
+    const userName =
+        document.getElementById('userName');
+
+    const userRole =
+        document.getElementById('userRole');
+
+    const profile =
+        document.getElementById('userProfile');
+
+    if (userName)
+        userName.textContent =
+            currentUser.full_name || currentUser.username;
+
+    if (userRole)
+        userRole.textContent =
+            currentUser.role;
+
+    if (profile)
+        profile.style.display = 'flex';
 }
 
 async function handleRegister(e) {
     e.preventDefault();
-    
+
     const full_name = document.getElementById('registerName').value;
     const email = document.getElementById('registerEmail').value;
     const username = document.getElementById('registerUsername').value;
     const password = document.getElementById('registerPassword').value;
-    
+    const button = e.target.querySelector('button[type="submit"]');
     try {
+        
+        setButtonLoading(button, true);
+
         const response = await fetch(`${API_URL}/auth/register`, {
             method: 'POST',
             headers: {
@@ -114,9 +234,10 @@ async function handleRegister(e) {
             },
             body: JSON.stringify({ username, email, password, full_name })
         });
-        
+        if (handleUnauthorized(response)) return;
+
         const data = await response.json();
-        
+
         if (response.ok) {
             showAlert('Account created successfully! Please login.', 'success');
             document.getElementById('registerForm').reset();
@@ -127,28 +248,30 @@ async function handleRegister(e) {
     } catch (error) {
         console.error('Registration failed:', error);
         showAlert('Registration failed. Please check your connection.', 'error');
+    } finally {
+        setButtonLoading(button, false);
     }
 }
 
 async function getCurrentUser() {
-    const token = localStorage.getItem('token');
-    
+    const token = sessionStorage.getItem('token');
+
     if (!token) {
         navigate('login');
         return;
     }
-    
+
     try {
         const response = await fetch(`${API_URL}/auth/me`, {
             headers: getAuthHeader()
         });
-        
+        if (handleUnauthorized(response)) return;
         if (response.ok) {
             currentUser = await response.json();
             updateNavigation();
             navigate('home');
         } else {
-            localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
             navigate('login');
         }
     } catch (error) {
@@ -158,7 +281,7 @@ async function getCurrentUser() {
 }
 
 function logout() {
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     currentUser = null;
     updateNavigation();
     navigate('login');
@@ -166,7 +289,7 @@ function logout() {
 }
 
 function getAuthHeader() {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     return {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -184,9 +307,9 @@ function showAlert(message, type = 'info') {
     alert.style.right = '20px';
     alert.style.zIndex = '1000';
     alert.style.maxWidth = '400px';
-    
+
     document.body.appendChild(alert);
-    
+
     // Remove after 3 seconds
     setTimeout(() => {
         alert.remove();
@@ -199,15 +322,20 @@ async function loadEvents() {
         const response = await fetch(`${API_URL}/events/`, {
             headers: getAuthHeader()
         });
-        
+        if (handleUnauthorized(response)) return;
         const events = await response.json();
         const eventsGrid = document.getElementById('eventsGrid');
-        
+
         if (events.length === 0) {
-            eventsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">No events available</p>';
+            eventsGrid.innerHTML = `
+                <div class="empty-state">
+                    <h3>📅 No Events Available</h3>
+                    <p>No events have been created yet.</p>
+                </div>
+                `;
             return;
         }
-        
+
         eventsGrid.innerHTML = events.map(event => `
             <div class="event-card">
                 <h3>${event.title}</h3>
@@ -224,9 +352,9 @@ async function loadEvents() {
     }
 }
 
-async function createEvent(event) {
+async function createEventHandler(event) {
     event.preventDefault();
-    
+
     const formData = new FormData(document.getElementById('eventForm'));
     const eventData = {
         title: formData.get('title'),
@@ -236,17 +364,16 @@ async function createEvent(event) {
         capacity: parseInt(formData.get('capacity')),
         ticket_price: parseFloat(formData.get('ticket_price')) || 0
     };
-    
+
     try {
         const response = await fetch(`${API_URL}/events/`, {
             method: 'POST',
             headers: getAuthHeader(),
             body: JSON.stringify({
-                ...eventData,
-                organizer_id: currentUser.id
+                ...eventData
             })
         });
-        
+        if (handleUnauthorized(response)) return;
         if (response.ok) {
             showAlert('Event created successfully!', 'success');
             document.getElementById('eventForm').reset();
@@ -267,10 +394,10 @@ async function buyTicket(eventId) {
         showAlert('Please log in first', 'error');
         return;
     }
-    
+
     const attendeeName = currentUser.full_name;
     const attendeeEmail = currentUser.email;
-    
+
     try {
         const response = await fetch(`${API_URL}/tickets/${eventId}`, {
             method: 'POST',
@@ -280,7 +407,7 @@ async function buyTicket(eventId) {
                 attendee_email: attendeeEmail
             })
         });
-        
+        if (handleUnauthorized(response)) return;
         if (response.ok) {
             showAlert('Ticket purchased successfully!', 'success');
             loadMyTickets();
@@ -300,19 +427,32 @@ async function loadMyTickets() {
         const response = await fetch(`${API_URL}/tickets/`, {
             headers: getAuthHeader()
         });
-        
+
         let tickets = [];
         if (response.ok) {
             tickets = await response.json();
+            console.log('All tickets before filter:', tickets);
+            console.log('Current user ID:', currentUser.id);
+            console.log('Current user:', currentUser);
+            
+            tickets = tickets.filter(
+                ticket => ticket.user_id === currentUser.id
+            );
         }
-        
+
+        if (handleUnauthorized(response)) return;
         const ticketsList = document.getElementById('ticketsList');
-        
+
         if (!tickets || tickets.length === 0) {
-            ticketsList.innerHTML = '<p>You don\'t have any tickets yet.</p>';
+            ticketsList.innerHTML = `
+                <div class="empty-state">
+                    <h3>🎫 No Tickets Found</h3>
+                    <p>You haven't purchased any tickets yet.</p>
+                </div>
+                `;
             return;
         }
-        
+
         ticketsList.innerHTML = tickets.map(ticket => `
             <div class="ticket-item">
                 <h4>${ticket.ticket_number}</h4>
@@ -329,29 +469,34 @@ async function loadMyTickets() {
     }
 }
 
+
+
 function downloadTicket(ticketNumber) {
-    showAlert(`Downloading ticket: ${ticketNumber}`, 'success');
-    // Implementation for downloading ticket
+
+    window.open(
+        `${API_URL.replace('/api', '')}/ticket/${ticketNumber}`,
+        '_blank'
+    );
 }
 
 // QR Code scanning
 async function scanTicket() {
     const ticketNumber = document.getElementById('scanInput').value;
-    
+
     if (!ticketNumber) {
         showAlert('Please enter a ticket number', 'error');
         return;
     }
-    
+
     try {
         const response = await fetch(`${API_URL}/qr/scan/${ticketNumber}`, {
             method: 'POST',
             headers: getAuthHeader()
         });
-        
+        if (handleUnauthorized(response)) return;
         const result = await response.json();
         const scanResult = document.getElementById('scanResult');
-        
+
         if (response.ok) {
             scanResult.className = 'success';
             scanResult.innerHTML = `
@@ -380,7 +525,7 @@ function showAdminTab(tabName) {
     document.querySelectorAll('.admin-tab-btn').forEach(btn => {
         btn.classList.remove('active');
     });
-    
+
     // Show selected tab
     document.getElementById(tabName + '-tab').classList.add('active');
     event.target.classList.add('active');
@@ -392,15 +537,15 @@ async function loadAdminStats() {
         const response = await fetch(`${API_URL}/admin/stats`, {
             headers: getAuthHeader()
         });
-        
+        if (handleUnauthorized(response)) return;
         if (response.ok) {
             const stats = await response.json();
-            
+
             document.getElementById('stat-users').textContent = stats.total_users;
             document.getElementById('stat-events').textContent = stats.total_events;
             document.getElementById('stat-tickets').textContent = stats.total_tickets;
             document.getElementById('stat-used').textContent = stats.tickets_used;
-            
+
             const roleStats = `
                 <p>👨‍💼 Admin: <strong>${stats.users_by_role.admin}</strong></p>
                 <p>🎯 Organizer: <strong>${stats.users_by_role.organizer}</strong></p>
@@ -419,11 +564,11 @@ async function loadAdminUsers() {
         const response = await fetch(`${API_URL}/admin/users`, {
             headers: getAuthHeader()
         });
-        
+        if (handleUnauthorized(response)) return;
         if (response.ok) {
             const users = await response.json();
             const tbody = document.getElementById('usersTable');
-            
+
             tbody.innerHTML = users.map(user => `
                 <tr>
                     <td>${user.username}</td>
@@ -459,7 +604,7 @@ async function updateUserRole(userId, newRole) {
             headers: getAuthHeader(),
             body: JSON.stringify({ role: newRole })
         });
-        
+        if (handleUnauthorized(response)) return;
         if (response.ok) {
             showAlert('User role updated successfully', 'success');
         } else {
@@ -474,13 +619,13 @@ async function updateUserRole(userId, newRole) {
 // Toggle user status
 async function toggleUserStatus(userId, currentStatus) {
     const endpoint = currentStatus ? 'deactivate' : 'activate';
-    
+
     try {
         const response = await fetch(`${API_URL}/admin/users/${userId}/${endpoint}`, {
             method: 'POST',
             headers: getAuthHeader()
         });
-        
+        if (handleUnauthorized(response)) return;
         if (response.ok) {
             showAlert(`User ${endpoint}d successfully`, 'success');
             loadAdminUsers();
@@ -499,11 +644,11 @@ async function loadAdminEvents() {
         const response = await fetch(`${API_URL}/admin/events`, {
             headers: getAuthHeader()
         });
-        
+        if (handleUnauthorized(response)) return;
         if (response.ok) {
             const events = await response.json();
             const tbody = document.getElementById('eventsTable');
-            
+
             tbody.innerHTML = events.map(event => `
                 <tr>
                     <td>${event.title}</td>
@@ -531,7 +676,7 @@ async function deleteEvent(eventId) {
                 method: 'DELETE',
                 headers: getAuthHeader()
             });
-            
+            if (handleUnauthorized(response)) return;
             if (response.ok) {
                 showAlert('Event deleted successfully', 'success');
                 loadAdminEvents();
@@ -551,11 +696,11 @@ async function loadAdminTickets() {
         const response = await fetch(`${API_URL}/admin/tickets`, {
             headers: getAuthHeader()
         });
-        
+        if (handleUnauthorized(response)) return;
         if (response.ok) {
             const tickets = await response.json();
             const tbody = document.getElementById('ticketsTable');
-            
+
             tbody.innerHTML = tickets.map(ticket => `
                 <tr>
                     <td>${ticket.ticket_number}</td>
@@ -571,4 +716,44 @@ async function loadAdminTickets() {
         console.error('Failed to load tickets:', error);
         showAlert('Failed to load tickets', 'error');
     }
+}
+
+function setButtonLoading(button, loading = true) {
+
+    if (!button) return;
+
+    if (loading) {
+
+        button.dataset.originalText =
+            button.innerHTML;
+
+        button.disabled = true;
+
+        button.innerHTML =
+            '⏳ Please wait...';
+
+    } else {
+
+        button.disabled = false;
+
+        button.innerHTML =
+            button.dataset.originalText;
+    }
+}
+
+function handleUnauthorized(response) {
+
+    if (response.status === 401) {
+
+        logout();
+
+        showAlert(
+            'Session expired. Please login again.',
+            'error'
+        );
+
+        return true;
+    }
+
+    return false;
 }

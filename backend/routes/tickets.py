@@ -12,6 +12,9 @@ from models import Ticket as TicketModel, Event as EventModel, User as UserModel
 from schemas import TicketCreate, Ticket
 from utils.qr import generate_qr_code
 from utils.auth import decode_token
+from services.notificaion_service import NotificationService
+from config import settings
+from routes.auth import get_current_user
 
 router = APIRouter()
 
@@ -44,7 +47,7 @@ def get_current_user_id(authorization: Optional[str] = Header(None), db: Session
     return user.id
 
 @router.post("/{event_id}", response_model=Ticket)
-def create_ticket(event_id: int, ticket_data: TicketCreate, db: Session = Depends(get_db)):
+def create_ticket(event_id: int, ticket_data: TicketCreate, db: Session = Depends(get_db), current_user: UserModel = Depends(get_current_user)):
     """Create a new ticket for an event"""
     
     # Check if event exists
@@ -69,13 +72,16 @@ def create_ticket(event_id: int, ticket_data: TicketCreate, db: Session = Depend
     # Generate ticket number and QR code with URL
     ticket_number = str(uuid.uuid4())[:8].upper()
     # QR code contains URL for scanning with mobile devices
-    qr_code_url = f"http://localhost:8000/ticket/{ticket_number}"
+    qr_code_url = (
+        f"{settings.base_url}/ticket/{ticket_number}"
+    )
     qr_code = generate_qr_code(qr_code_url)
     
     new_ticket = TicketModel(
         event_id=event_id,
         ticket_number=ticket_number,
         qr_code=qr_code,
+        user_id=current_user.id,
         **ticket_data.dict()
     )
     
@@ -90,6 +96,16 @@ def create_ticket(event_id: int, ticket_data: TicketCreate, db: Session = Depend
     )
     db.add(qr_code_record)
     db.commit()
+    db.refresh(qr_code_record)
+    
+    try:
+        NotificationService.ticket_ready(
+            ticket=new_ticket,
+            event=event
+        )
+    except Exception as e:
+        print(f"Notification failed: {e}")
+    
     
     return new_ticket
 
