@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Event Ticketing System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <nav class="navbar" id="navbar">
+            <div class="container">
+                <h1 class="logo">🎟️ Event Ticketing System</h1>
+                <div class="nav-links" id="navLinks">
+                    <a href="#" onclick="navigate('home')">Home</a>
+                    <a href="#" onclick="navigate('events')">Events</a>
+                    <a href="#" onclick="navigate('my-tickets')">My Tickets</a>
+                    <a href="#" onclick="navigate('scan')">Scan Ticket</a>
+                    <a href="#" onclick="navigate('admin')" id="adminLink" style="display:none; color: #ff9800; font-weight: bold;">🔧 Admin</a>
+                    <a href="#" onclick="logout()" id="logoutBtn" style="display:none;">Logout</a>
+                </div>
+            </div>
+        </nav>
+
+        <main class="container">
+            <!-- Login Page -->
+            <section id="login" class="page active">
+                <div class="auth-container">
+                    <div class="auth-card">
+                        <h2>Event Ticketing System</h2>
+                        <p>Login to your account</p>
+                        <form id="loginForm" onsubmit="handleLogin(event)" class="form">
+                            <div class="form-group">
+                                <label>Username</label>
+                                <input type="text" id="loginUsername" name="username" class="input" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input type="password" id="loginPassword" name="password" class="input" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                        </form>
+                        <p style="text-align: center; margin-top: 1rem;">
+                            Don't have an account? 
+                            <a href="#" onclick="navigate('register')" style="color: var(--primary-color); text-decoration: underline;">Register here</a>
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Register Page -->
+            <section id="register" class="page">
+                <div class="auth-container">
+                    <div class="auth-card">
+                        <h2>Create Account</h2>
+                        <p>Register for a new account</p>
+                        <form id="registerForm" onsubmit="handleRegister(event)" class="form">
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input type="text" id="registerName" name="full_name" class="input" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="registerEmail" name="email" class="input" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Username</label>
+                                <input type="text" id="registerUsername" name="username" class="input" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input type="password" id="registerPassword" name="password" class="input" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>
+                        </form>
+                        <p style="text-align: center; margin-top: 1rem;">
+                            Already have an account? 
+                            <a href="#" onclick="navigate('login')" style="color: var(--primary-color); text-decoration: underline;">Login here</a>
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Home Page -->
+            <section id="home" class="page">
+                <div class="hero">
+                    <h2>Welcome to Event Ticketing System</h2>
+                    <p>Create events, generate tickets, and manage attendees with QR codes</p>
+                    <button onclick="navigate('events')" class="btn btn-primary">Browse Events</button>
+                </div>
+            </section>
+
+            <!-- Events Page -->
+            <section id="events" class="page">
+                <h2>Events</h2>
+                <div class="events-grid" id="eventsGrid">
+                    <!-- Events will be loaded here -->
+                </div>
+            </section>
+
+            <!-- My Tickets Page -->
+            <section id="my-tickets" class="page">
+                <h2>My Tickets</h2>
+                <div class="tickets-list" id="ticketsList">
+                    <!-- Tickets will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Scan Ticket Page -->
+            <section id="scan" class="page">
+                <h2>Scan Ticket</h2>
+                <div class="scan-form">
+                    <input type="text" id="scanInput" placeholder="Enter ticket number" class="input">
+                    <button onclick="scanTicket()" class="btn btn-primary">Verify Ticket</button>
+                    <div id="scanResult"></div>
+                </div>
+            </section>
+
+            <!-- Create Event Page -->
+            <section id="create-event" class="page">
+                <h2>Create New Event</h2>
+                <form id="eventForm" onsubmit="createEvent(event)" class="form">
+                    <div class="form-group">
+                        <label>Event Title</label>
+                        <input type="text" name="title" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea name="description" class="input" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" name="location" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Event Date</label>
+                        <input type="datetime-local" name="event_date" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Capacity</label>
+                        <input type="number" name="capacity" class="input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Ticket Price ($)</label>
+                        <input type="number" name="ticket_price" class="input" step="0.01">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Event</button>
+                </form>
+            </section>
+
+            <!-- Admin Dashboard Page -->
+            <section id="admin" class="page">
+                <h2>Admin Dashboard</h2>
+                
+                <div class="admin-tabs">
+                    <button class="admin-tab-btn active" onclick="showAdminTab('stats')">📊 Statistics</button>
+                    <button class="admin-tab-btn" onclick="showAdminTab('users')">👥 Users</button>
+                    <button class="admin-tab-btn" onclick="showAdminTab('events')">📅 Events</button>
+                    <button class="admin-tab-btn" onclick="showAdminTab('tickets')">🎫 Tickets</button>
+                </div>
+
+                <!-- Statistics Tab -->
+                <div id="stats-tab" class="admin-tab-content active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-users">0</div>
+                            <div class="stat-label">Total Users</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-events">0</div>
+                            <div class="stat-label">Total Events</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-tickets">0</div>
+                            <div class="stat-label">Total Tickets</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="stat-used">0</div>
+                            <div class="stat-label">Tickets Used</div>
+                        </div>
+                    </div>
+                    <div class="role-breakdown">
+                        <h3>Users by Role</h3>
+                        <div id="role-stats"></div>
+                    </div>
+                </div>
+
+                <!-- Users Tab -->
+                <div id="users-tab" class="admin-tab-content">
+                    <h3>User Management</h3>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Full Name</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable">
+                            <tr><td colspan="6" style="text-align: center;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Events Tab -->
+                <div id="events-tab" class="admin-tab-content">
+                    <h3>Event Management</h3>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Location</th>
+                                <th>Date</th>
+                                <th>Capacity</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="eventsTable">
+                            <tr><td colspan="6" style="text-align: center;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Tickets Tab -->
+                <div id="tickets-tab" class="admin-tab-content">
+                    <h3>Ticket Management</h3>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Ticket Number</th>
+                                <th>Attendee</th>
+                                <th>Email</th>
+                                <th>Event ID</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ticketsTable">
+                            <tr><td colspan="6" style="text-align: center;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
