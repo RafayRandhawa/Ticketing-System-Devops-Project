@@ -472,11 +472,7 @@ async function loadMyTickets() {
 
 
 function downloadTicket(ticketNumber) {
-
-    window.open(
-        `${API_URL.replace('/api', '')}/ticket/${ticketNumber}`,
-        '_blank'
-    );
+    window.open(`/ticket/${ticketNumber}`, '_blank');
 }
 
 // QR Code scanning
